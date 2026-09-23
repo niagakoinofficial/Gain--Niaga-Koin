@@ -1,0 +1,191 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validation Helpers
+    function isValidUser(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.username is string && data.username.size() >= 1 && data.username.size() <= 128 &&
+             data.email is string && data.email.size() <= 128 &&
+             data.memberId is string && data.memberId.size() <= 32 &&
+             data.liquidBalance is number && data.liquidBalance >= 0 &&
+             data.availableCash is number && data.availableCash >= 0 &&
+             data.gasReserve is number && data.gasReserve >= 0 &&
+             (!('totalInflow' in data) || (data.totalInflow is number && data.totalInflow >= 0)) &&
+             (!('totalOutflow' in data) || (data.totalOutflow is number && data.totalOutflow >= 0)) &&
+             (!('accountStatus' in data) || data.accountStatus in ['active', 'non-active']) &&
+             (!('twoFactorEnabled' in data) || data.twoFactorEnabled is bool) &&
+             (!('twoFactorSecret' in data) || (data.twoFactorSecret is string && data.twoFactorSecret.size() <= 64));
+    }
+
+    function isValidTradingPosition(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.pair is string && data.pair.size() <= 32 &&
+             data.coin is string && data.coin.size() <= 16 &&
+             data.status in ['active', 'averaging', 'inactive'] &&
+             data.price is number && data.price >= 0 &&
+             data.floatingPnl is number &&
+             data.stepLayer is number && data.stepLayer >= 0 &&
+             (!('minPrice' in data) || (data.minPrice is number && data.minPrice >= 0)) &&
+             (!('maxPrice' in data) || (data.maxPrice is number && data.maxPrice >= 0)) &&
+             (!('priceBoundaryStatus' in data) || data.priceBoundaryStatus in ['IN_RANGE', 'ABOVE_MAX', 'BELOW_MIN']);
+    }
+
+    function isValidTransaction(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() <= 128 &&
+             data.type in ['inflow', 'outflow', 'gas', 'neutral'] &&
+             data.status is string && data.status.size() <= 32 &&
+             data.amount is number &&
+             data.amountFormatted is string && data.amountFormatted.size() <= 64;
+    }
+
+    function isValidTradeRecord(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.symbol is string && data.symbol.size() <= 32 &&
+             data.side in ['buy', 'sell'] &&
+             data.price is number && data.price >= 0 &&
+             data.amount is number && data.amount >= 0 &&
+             data.costUsdt is number && data.costUsdt >= 0;
+    }
+
+    function isValidMemberDirectoryItem(data) {
+      return data.memberId is string && data.memberId.size() <= 32 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.username is string && data.username.size() <= 128 &&
+             data.emailMasked is string && data.emailMasked.size() <= 128 &&
+             (!('vipTier' in data) || (data.vipTier is string && data.vipTier.size() <= 32)) &&
+             (!('accountStatus' in data) || data.accountStatus in ['active', 'non-active']);
+    }
+
+    // Health check / connection test document
+    match /test/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // User Profile & Balances
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false; // Blanket listing of users is forbidden
+
+      allow create: if isOwner(userId) && isValidId(userId) &&
+                       isValidUser(incoming()) &&
+                       incoming().id == request.auth.uid;
+
+      allow update: if isOwner(userId) && isValidId(userId) &&
+                       isValidUser(incoming()) &&
+                       incoming().id == existing().id &&
+                       (!('memberId' in existing()) || incoming().memberId == existing().memberId) &&
+                       (!('createdAt' in existing()) || !('createdAt' in incoming()) || incoming().createdAt == existing().createdAt);
+
+      allow delete: if false;
+
+      // Subcollection: Trading Positions
+      match /positions/{positionId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(positionId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(positionId) &&
+                         isValidTradingPosition(incoming()) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().id == positionId;
+
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(positionId) &&
+                         isValidTradingPosition(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().id == existing().id;
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(positionId);
+      }
+
+      // Subcollection: Transactions Ledger (Strictly Immutable Financial Records)
+      match /transactions/{transactionId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(transactionId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(transactionId) &&
+                         isValidTransaction(incoming()) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().id == transactionId;
+
+        allow update: if false; // Immutable ledger: prevent post-hoc mutation or transaction tampering
+        allow delete: if false; // Immutable ledger: prevent erasure of audit trail
+      }
+
+      // Subcollection: Trade History (Audit Trail with sync merge support)
+      match /trade_history/{tradeId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(tradeId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(tradeId) &&
+                         isValidTradeRecord(incoming()) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().id == tradeId;
+
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(tradeId) &&
+                         isValidTradeRecord(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().id == existing().id;
+
+        allow delete: if false; // Immutable trade history
+      }
+
+      // Subcollection: Network Referrals
+      match /network/{networkId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(networkId);
+        allow list: if isOwner(userId) && isValidId(userId);
+        allow create, update: if isOwner(userId) && isValidId(userId) && isValidId(networkId);
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(networkId);
+      }
+    }
+
+    // Public Member Directory (for internal P2P lookups and referral verification)
+    match /member_directory/{memberId} {
+      allow get: if isSignedIn() && isValidId(memberId);
+      allow list: if false; // Blanket listing forbidden
+
+      allow create: if isSignedIn() && isValidId(memberId) &&
+                       isValidMemberDirectoryItem(incoming()) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().memberId == memberId;
+
+      allow update: if isSignedIn() && isValidId(memberId) &&
+                       isValidMemberDirectoryItem(incoming()) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().memberId == memberId &&
+                       existing().userId == request.auth.uid;
+
+      allow delete: if false;
+    }
+  }
+}
