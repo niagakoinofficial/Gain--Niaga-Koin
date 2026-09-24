@@ -28,6 +28,21 @@ export function GasFeeModal({
   const numAmount = parseFloat(amount) || 0;
   const newGasTotal = currentGasReserve + numAmount;
 
+  // Gas Health Status Calculation (Based on 10 USDT Warning & 5 USDT Critical rules)
+  const isCritical = currentGasReserve <= 5.0;
+  const isWarning = currentGasReserve > 5.0 && currentGasReserve <= 10.0;
+  const gasStatusText = isCritical
+    ? 'Zona Kritis (≤ 5 USDT)'
+    : isWarning
+    ? 'Zona Waspada (≤ 10 USDT)'
+    : 'Aman (> 10 USDT)';
+  const gasStatusBadge = isCritical
+    ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+    : isWarning
+    ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+  const healthPercent = Math.min(100, Math.max(5, (currentGasReserve / 25) * 100));
+
   if (!isOpen) return null;
 
   const handleAddAmount = (addVal: number) => {
@@ -106,11 +121,11 @@ export function GasFeeModal({
                 </div>
               </div>
               <div className="text-right">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Pool Health: 68% Normal
+                <span className={`px-2 py-0.5 rounded text-[10px] font-mono border font-semibold ${gasStatusBadge}`}>
+                  {gasStatusText}
                 </span>
                 <p className="text-[10px] text-slate-400 font-mono mt-1">
-                  ~12 Transaksi TP Aman
+                  {isCritical ? '24h Grace Period Aktif' : isWarning ? 'Bot Berjalan Normal' : 'Semua Bot Normal'}
                 </p>
               </div>
             </div>
@@ -118,10 +133,35 @@ export function GasFeeModal({
             {/* Health Bar */}
             <div className="w-full h-2 rounded-full bg-[#070D17] overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 rounded-full transition-all duration-500"
-                style={{ width: '68%' }}
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isCritical
+                    ? 'bg-rose-500'
+                    : isWarning
+                    ? 'bg-amber-400'
+                    : 'bg-gradient-to-r from-cyan-400 to-emerald-400'
+                }`}
+                style={{ width: `${healthPercent}%` }}
               ></div>
             </div>
+
+            {/* Critical Alert Warning */}
+            {isCritical && (
+              <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[11px] font-mono flex items-start gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                <span>
+                  Gas ≤ 5 USDT: Bot dilarang membuka layer averaging baru. Segera top-up agar siklus averaging berjalan tanpa hambatan.
+                </span>
+              </div>
+            )}
+
+            {isWarning && (
+              <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono flex items-start gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  Gas ≤ 10 USDT: Peringatan saldo gas menipis. Bot tetap berjalan normal, disarankan melakukan top-up.
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-1">
               <span>Vault Tersedia: {availableBalance.toFixed(2)} USDT</span>
@@ -131,7 +171,7 @@ export function GasFeeModal({
                   onClick={onOpenProfitShare}
                   className="text-[#00F0C8] hover:underline"
                 >
-                  Formula Bagi Hasil 20% →
+                  Formula Bagi Hasil 70/30 →
                 </button>
               )}
             </div>

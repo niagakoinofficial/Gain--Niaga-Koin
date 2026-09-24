@@ -48,12 +48,14 @@ import { SimulationModal } from './components/modals/SimulationModal';
 import { ExchangeCoinsCheckerModal } from './components/modals/ExchangeCoinsCheckerModal';
 import { ActivationFeeModal } from './components/modals/ActivationFeeModal';
 import { Google2faModal } from './components/modals/Google2faModal';
+import { Login2faModal } from './components/modals/Login2faModal';
+import { GmailVerificationModal } from './components/modals/GmailVerificationModal';
 
 function AppContent() {
   const [currentRoute, setCurrentRoute] = useState<NavigationRoute>('home');
   const [currentExchange, setCurrentExchange] = useState<ExchangeName>('Bitget');
 
-  const { currentUser } = useAuth();
+  const { currentUser, is2faVerified, verify2faSession, logout } = useAuth();
 
   // Application State
   const [wallet, setWallet] = useState<UserWallet>(initialWallet);
@@ -111,7 +113,7 @@ function AppContent() {
     };
   }, [currentUser]);
 
-  // Fetch real-time live ticker prices from connected exchange
+  // Fetch real-time live ticker prices from connected exchange via single efficient batch request
   useEffect(() => {
     let isMounted = true;
     const updateTickers = async () => {
@@ -131,30 +133,25 @@ function AppContent() {
           'ZEC/USDT',
           'DOGE/USDT',
         ];
-        const results = await Promise.allSettled(
-          pairs.map((symbol) =>
-            fetch('/api/exchange/fetch-ticker', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ exchange: exchangeToUse, symbol }),
-            }).then((res) => res.json())
-          )
-        );
 
-        if (!isMounted) return;
+        const res = await fetch('/api/exchange/fetch-tickers-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ exchange: exchangeToUse, symbols: pairs }),
+        });
+        const data = await res.json();
+
+        if (!isMounted || !data.success || !data.tickers) return;
 
         setPositions((prev) =>
           prev.map((pos) => {
-            const matchIndex = pairs.indexOf(pos.pair);
-            if (matchIndex !== -1 && results[matchIndex].status === 'fulfilled') {
-              const res = (results[matchIndex] as PromiseFulfilledResult<any>).value;
-              if (res.success && res.last) {
-                return {
-                  ...pos,
-                  price: res.last,
-                  change24h: res.percentage ?? pos.change24h,
-                };
-              }
+            const ticker = data.tickers[pos.pair];
+            if (ticker && ticker.last) {
+              return {
+                ...pos,
+                price: ticker.last,
+                change24h: ticker.percentage ?? pos.change24h,
+              };
             }
             return pos;
           })
@@ -531,6 +528,19 @@ function AppContent() {
     }
   };
 
+  const handleEmailVerificationSuccess = async () => {
+    setWallet((prev) => ({
+      ...prev,
+      emailVerified: true,
+    }));
+
+    if (currentUser) {
+      await updateUserWallet(currentUser.uid, {
+        emailVerified: true,
+      });
+    }
+  };
+
   // Secure Account Activation with Backend License Verification
   const handleProcessActivation = async (
     tier: 'starter_5' | 'pro_10' = 'starter_5',
@@ -828,6 +838,8 @@ function AppContent() {
     const grossProfit = target.floatingPnl;
     const netProfitTrader = grossProfit * 0.8;
     const gasDeduction = grossProfit * 0.2;
+    const foundationKas = gasDeduction * 0.70;
+    const sponsorBonus = gasDeduction * 0.30;
 
     // Calculate real sell quantity based on allocation or unit price
     let sellAmount = 0.001;
@@ -881,6 +893,28 @@ function AppContent() {
     const newGasConsumed = wallet.gasConsumed + gasDeduction;
     const newVolume = wallet.volume24h + grossProfit;
 
+    // Check circuit breaker status after deduction
+    if (newGasReserve <= 5.0) {
+      setTimeout(() => {
+        alert(
+          `🚨 PERHATIAN ZONA KRITIS (Gas Fee ≤ 5 USDT)!\n\n` +
+          `Sisa saldo Gas Fee Tank Anda: ${newGasReserve.toFixed(2)} USDT.\n` +
+          `• Bot memasuki mode Auto-Standby & dilarang membuka layer averaging baru.\n` +
+          `• Masa tenggang (Grace Period) 24 jam aktif untuk menyelesaikan posisi floating secara aman.\n` +
+          `• Silakan lakukan top-up Gas Fee Tank agar siklus averaging berjalan normal.`
+        );
+      }, 500);
+    } else if (newGasReserve <= 10.0) {
+      setTimeout(() => {
+        alert(
+          `⚠️ PERHATIAN ZONA WASPADA (Gas Fee ≤ 10 USDT)!\n\n` +
+          `Sisa saldo Gas Fee Tank Anda: ${newGasReserve.toFixed(2)} USDT.\n` +
+          `• Bot tetap berjalan normal tanpa kendala.\n` +
+          `• Disarankan melakukan top-up Gas Fee Tank segera.`
+        );
+      }, 500);
+    }
+
     setWallet((prev) => ({
       ...prev,
       liquidBalance: newLiquid,
@@ -919,7 +953,7 @@ function AppContent() {
       counterpartyLabel: 'Engine: ',
       amount: netProfitTrader,
       amountFormatted: `+${netProfitTrader.toFixed(2)} USDT`,
-      feeInfo: `Net 80% (Gas: -${gasDeduction.toFixed(2)} USDT)${exchangeOrderId ? ' • Market Sell Executed' : ''}`,
+      feeInfo: `Net 80% (Gas 20%: -${gasDeduction.toFixed(2)} USDT [Kas 70%: ${foundationKas.toFixed(2)} | Sponsor 30%: ${sponsorBonus.toFixed(2)}])${exchangeOrderId ? ' • Market Sell Executed' : ''}`,
       txHash: exchangeOrderId ? `0x${exchangeOrderId}` : undefined,
       network: activeApiCreds ? `${activeApiCreds.exchange} ${activeApiCreds.isSandbox ? 'Testnet' : 'Live'}` : 'GAIN Vault',
     };
@@ -1135,10 +1169,27 @@ function AppContent() {
     const maxAllowed = wallet.accountStatus === 'active' ? (wallet.maxActiveBots || 5) : 5;
     const isOverQuota = activeBotIds.size >= maxAllowed;
 
-    const initialStatus = isOverQuota ? 'inactive' : 'active';
-    const initialStatusLabel = isOverQuota ? 'DRAFT (KUOTA PENUH)' : 'AKTIF RUNNING';
+    // Circuit Breaker Rule (Zona Kritis: Gas Fee Tank <= 5 USDT)
+    // Bot baru dilarang membuka averaging layer, otomatis disimpan sebagai DRAFT / AUTO-STANDBY
+    const isGasCritical = wallet.gasReserve <= 5.0;
 
-    if (isOverQuota) {
+    let initialStatus: 'active' | 'inactive' = 'active';
+    let initialStatusLabel = 'AKTIF RUNNING';
+
+    if (isGasCritical) {
+      initialStatus = 'inactive';
+      initialStatusLabel = 'AUTO-STANDBY (GAS KRITIS ≤ 5)';
+      alert(
+        `🚨 ZONA KRITIS AKTIF: Saldo Gas Fee Tank Menipis (${wallet.gasReserve.toFixed(2)} USDT ≤ 5 USDT)!\n\n` +
+        `Sesuai aturan keamanan & circuit breaker GAIN:\n` +
+        `• Bot baru "${finalBotName}" otomatis disimpan sebagai STANDBY (tidak diizinkan membuka layer averaging baru).\n` +
+        `• Posisi floating yang sudah berjalan diberikan masa tenggang (Grace Period) 24 jam untuk menutup siklusnya secara aman.\n` +
+        `• Silakan lakukan Top-Up Gas Fee Tank Anda untuk mengaktifkan bot ini kembali.`
+      );
+      setIsGasModalOpen(true);
+    } else if (isOverQuota) {
+      initialStatus = 'inactive';
+      initialStatusLabel = 'DRAFT (KUOTA PENUH)';
       alert(
         `ℹ️ Bot Disimpan Sebagai DRAFT (Tanpa Batas Kuota Draft)!\n\n` +
         `Saat ini Anda telah menjalankan ${activeBotIds.size}/${maxAllowed} bot aktif (${wallet.licenseName || 'Starter Lifetime (5 Bot)'}).\n\n` +
@@ -1300,9 +1351,11 @@ function AppContent() {
         currentExchange={currentExchange}
         onSelectExchange={setCurrentExchange}
         connectedExchange={wallet.connectedExchange}
+        twoFactorEnabled={wallet.twoFactorEnabled !== false}
         onOpenApiKey={() => setIsApiKeyModalOpen(true)}
         onDisconnectApi={handleDisconnectExchange}
         onOpenProfitShare={() => setIsProfitShareModalOpen(true)}
+        onOpen2faModal={() => setIs2faModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -1362,6 +1415,8 @@ function AppContent() {
             onDeployBotToExchange={handleExecuteLiveBotOrder}
             connectedExchangeName={wallet.connectedExchange?.exchange || currentExchange}
             isSandbox={wallet.connectedExchange?.isSandbox ?? true}
+            gasReserve={wallet.gasReserve}
+            onOpenGas={() => setIsGasModalOpen(true)}
           />
         )}
 
@@ -1510,6 +1565,35 @@ function AppContent() {
           ).size
         }
       />
+
+      {/* Mandatory 2FA Gate: Must verify 2FA upon Google Login before accessing dashboard */}
+      {currentUser && wallet.twoFactorEnabled !== false && !is2faVerified && (
+        <Login2faModal
+          isOpen={true}
+          userEmail={wallet.email || currentUser.email || ''}
+          userName={wallet.username || currentUser.displayName || ''}
+          userSecret={wallet.twoFactorSecret || 'JBSWY3DPEHPK3PXPJA2G6ZRA'}
+          onVerifySuccess={() => {
+            verify2faSession();
+          }}
+          onCancel={async () => {
+            await logout();
+          }}
+        />
+      )}
+
+      {/* Mandatory Registration Gate: Kode Verifikasi Gmail saat registrasi akun baru */}
+      {currentUser && (wallet.emailVerified === false) && is2faVerified && (
+        <GmailVerificationModal
+          isOpen={true}
+          userEmail={wallet.email || currentUser.email || ''}
+          userName={wallet.username || currentUser.displayName || ''}
+          onVerificationSuccess={handleEmailVerificationSuccess}
+          onCancel={async () => {
+            await logout();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -20,6 +20,7 @@ interface HeaderBarProps {
   currentExchange: ExchangeName;
   onSelectExchange: (exchange: ExchangeName) => void;
   connectedExchange?: import('../types').ConnectedExchangeConfig;
+  twoFactorEnabled?: boolean;
   title?: string;
   subtitle?: string;
   showBack?: boolean;
@@ -27,12 +28,14 @@ interface HeaderBarProps {
   onOpenProfitShare?: () => void;
   onOpenApiKey?: () => void;
   onDisconnectApi?: () => void;
+  onOpen2faModal?: () => void;
 }
 
 export function HeaderBar({
   currentExchange,
   onSelectExchange,
   connectedExchange,
+  twoFactorEnabled = true,
   title,
   subtitle,
   showBack,
@@ -40,10 +43,11 @@ export function HeaderBar({
   onOpenProfitShare,
   onOpenApiKey,
   onDisconnectApi,
+  onOpen2faModal,
 }: HeaderBarProps) {
   const [exchangeDropdownOpen, setExchangeDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { currentUser, loginWithGoogle, logout, isFirebaseConnected } = useAuth();
+  const { currentUser, loginWithGoogle, logout, isFirebaseConnected, is2faVerified, isLoggingIn } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const exchanges: ExchangeName[] = ['Bitget', 'Binance', 'OKX', 'Tokocrypto'];
 
@@ -163,6 +167,27 @@ export function HeaderBar({
                     </span>
                   </div>
 
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span>Gmail Verified:</span>
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Terverifikasi
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span>Google 2FA:</span>
+                    <span className={`font-bold flex items-center gap-1 ${
+                      is2faVerified
+                        ? 'text-emerald-400'
+                        : twoFactorEnabled
+                        ? 'text-amber-400'
+                        : 'text-slate-400'
+                    }`}>
+                      <ShieldCheck className="w-3 h-3" />
+                      {is2faVerified ? 'Terverifikasi' : twoFactorEnabled ? 'Perlu Kode 2FA' : 'Non-Aktif'}
+                    </span>
+                  </div>
+
                   {connectedExchange?.isConnected ? (
                     <div className="p-2 rounded-xl bg-[#0E1B2E] border border-[#182F4D] space-y-1.5 mt-2">
                       <div className="flex items-center justify-between">
@@ -219,11 +244,21 @@ export function HeaderBar({
         ) : (
           <button
             onClick={loginWithGoogle}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#00F0C8]/10 border border-[#00F0C8]/40 text-[#00F0C8] text-xs font-mono font-bold hover:bg-[#00F0C8]/20 transition cursor-pointer"
+            disabled={isLoggingIn}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00F0C8]/10 border border-[#00F0C8]/40 text-[#00F0C8] text-xs font-mono font-bold hover:bg-[#00F0C8]/20 disabled:opacity-60 transition cursor-pointer"
             title="Masuk dengan Google"
           >
-            <LogIn className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Google Login</span>
+            {isLoggingIn ? (
+              <>
+                <div className="w-3 h-3 border-2 border-[#00F0C8] border-t-transparent rounded-full animate-spin"></div>
+                <span className="hidden sm:inline">Menghubungkan...</span>
+              </>
+            ) : (
+              <>
+                <LogIn className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Google Login</span>
+              </>
+            )}
           </button>
         )}
 

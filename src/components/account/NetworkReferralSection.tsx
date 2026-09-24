@@ -127,16 +127,16 @@ export function NetworkReferralSection({
       {/* Member ID & Sponsor Identity Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {/* User Member ID Box */}
-        <div className="p-3 rounded-xl bg-[#050A14] border border-[#14233A] flex items-center justify-between">
-          <div>
+        <div className="p-3 rounded-xl bg-[#050A14] border border-[#14233A] flex items-center justify-between gap-2">
+          <div className="min-w-0">
             <span className="text-[10px] text-slate-500 font-mono uppercase block">
               ID Member Anda
             </span>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="font-mono text-sm font-extrabold text-[#00F0C8]">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-0.5">
+              <span className="font-mono text-sm font-extrabold text-[#00F0C8] whitespace-nowrap">
                 {wallet.memberId}
               </span>
-              <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold border ${
+              <span className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold whitespace-nowrap border ${
                 wallet.accountStatus === 'active'
                   ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                   : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
@@ -147,7 +147,7 @@ export function NetworkReferralSection({
           </div>
           <button
             onClick={copyMemberId}
-            className="px-2.5 py-1 rounded-lg bg-[#0E1B2E] border border-[#1A2E4C] text-[#00F0C8] text-[11px] font-mono font-bold hover:bg-[#13253F] transition flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 rounded-lg bg-[#0E1B2E] border border-[#1A2E4C] text-[#00F0C8] text-[11px] font-mono font-bold hover:bg-[#13253F] transition flex items-center gap-1 cursor-pointer shrink-0"
           >
             {copiedId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             <span>{copiedId ? 'Tersalin' : 'Salin'}</span>
@@ -155,23 +155,23 @@ export function NetworkReferralSection({
         </div>
 
         {/* Sponsor / Upline Box */}
-        <div className="p-3 rounded-xl bg-[#050A14] border border-[#14233A] flex items-center justify-between">
-          <div>
+        <div className="p-3 rounded-xl bg-[#050A14] border border-[#14233A] flex items-center justify-between gap-2">
+          <div className="min-w-0">
             <span className="text-[10px] text-slate-500 font-mono uppercase block">
               Sponsor / Pengundang Anda
             </span>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="font-mono text-xs font-bold text-white">
+            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+              <span className="font-mono text-xs font-bold text-white whitespace-nowrap">
                 {wallet.sponsorId || 'GN-10001'}
               </span>
-              <span className="text-[11px] text-slate-400 truncate max-w-[110px]">
+              <span className="text-[11px] text-slate-400 truncate max-w-[130px]">
                 ({wallet.sponsorName || 'Master GAIN'})
               </span>
             </div>
           </div>
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium flex items-center gap-1">
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium flex items-center gap-1 shrink-0">
             <ShieldCheck className="w-3 h-3 text-emerald-400" />
-            <span>Terverifikasi</span>
+            <span className="whitespace-nowrap">Terverifikasi</span>
           </span>
         </div>
       </div>
@@ -288,7 +288,7 @@ export function NetworkReferralSection({
         <div className="p-2.5 rounded-lg bg-[#0E1A2C] border border-[#182C48] flex items-start gap-2">
           <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
-            <strong>Sumber Pendapatan Berkelanjutan:</strong> Setiap member baru mendapatkan bonus Gas Fee 20% ($20 - $35 USDT) untuk modal trading awal. Setelah bonus tersebut terpakai untuk profit sharing, pendapatan berkelanjutan sponsor mengalir dari setiap <em>topup fee trading / gas tank</em> downline secara otomatis!
+            <strong>Bagi Hasil Trading (30% dari Gas Fee Platform):</strong> Selain bonus aktivasi awal, setiap kali bot downline Anda Take Profit, <strong>30% dari potongan Gas Fee 20%</strong> langsung ditransfer detik itu juga ke saldo wallet Anda secara real-time tanpa potongan!
           </p>
         </div>
       </div>

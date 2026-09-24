@@ -154,11 +154,32 @@ export function WalletView({
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
-                  Cadangan Gas Fee
+                  Cadangan Gas Fee (20% Profit)
                 </span>
-                <span className="text-sm font-bold text-emerald-400 mt-0.5 block">
-                  +{wallet.gasReserve.toFixed(4)} USDT
-                </span>
+                <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                  <span className={`text-sm font-bold block ${
+                    wallet.gasReserve <= 5.0
+                      ? 'text-rose-400 font-extrabold animate-pulse'
+                      : wallet.gasReserve <= 10.0
+                      ? 'text-amber-400 font-bold'
+                      : 'text-emerald-400'
+                  }`}>
+                    +{wallet.gasReserve.toFixed(4)} USDT
+                  </span>
+                  {wallet.gasReserve <= 5.0 ? (
+                    <span className="px-1 py-0.2 rounded text-[9px] bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                      Kritis
+                    </span>
+                  ) : wallet.gasReserve <= 10.0 ? (
+                    <span className="px-1 py-0.2 rounded text-[9px] bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                      Waspada
+                    </span>
+                  ) : (
+                    <span className="px-1 py-0.2 rounded text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      Aman
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

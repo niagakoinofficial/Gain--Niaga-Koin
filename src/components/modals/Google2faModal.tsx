@@ -185,7 +185,7 @@ export function Google2faModal({
               <div>
                 <span className="font-bold text-xs text-white block">Status Proteksi 2FA</span>
                 <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                  Wajibkan 6 digit kode saat Withdraw & Transfer P2P
+                  Wajibkan 6 digit kode saat Login, Penarikan Vault &amp; Transfer P2P
                 </p>
               </div>
             </div>

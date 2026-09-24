@@ -155,6 +155,8 @@ export interface UserWallet {
   totalReferralBonusUsdt?: number;
   twoFactorEnabled?: boolean;
   twoFactorSecret?: string;
+  emailVerified?: boolean;
+  emailVerificationCode?: string;
 }
 
 export interface BotSettingsConfig {

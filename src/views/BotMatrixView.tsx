@@ -37,6 +37,8 @@ interface BotMatrixViewProps {
   onDeployBotToExchange?: (pair: string) => Promise<{ success: boolean; orderId?: string; message?: string; error?: string }>;
   connectedExchangeName?: string;
   isSandbox?: boolean;
+  gasReserve?: number;
+  onOpenGas?: () => void;
 }
 
 export function BotMatrixView({
@@ -45,10 +47,15 @@ export function BotMatrixView({
   onDeployBotToExchange,
   connectedExchangeName = 'Binance',
   isSandbox = true,
+  gasReserve = 15.0,
+  onOpenGas,
 }: BotMatrixViewProps) {
   const [activeModeFilter, setActiveModeFilter] = useState<'all' | BotMode>('all');
   const [deployingPair, setDeployingPair] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const isGasCritical = gasReserve <= 5.0;
+  const isGasWarning = gasReserve > 5.0 && gasReserve <= 10.0;
 
   // 1. Bot Settings First
   const [customBotName, setCustomBotName] = useState('GAIN Matrix Hybrid Pro #1');
@@ -168,6 +175,65 @@ export function BotMatrixView({
 
   return (
     <div className="space-y-4 pb-20">
+      {/* Circuit Breaker Alerts (10 USDT Warning / 5 USDT Critical) */}
+      {isGasCritical && (
+        <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-300 flex items-center justify-between gap-3 shadow-lg animate-pulse">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 fill-current" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 font-bold text-xs">
+                <span>ZONA KRITIS: Saldo Gas Fee ≤ 5 USDT ({gasReserve.toFixed(2)} USDT)</span>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-rose-500 text-slate-950 font-extrabold uppercase">
+                  Auto-Standby
+                </span>
+              </div>
+              <p className="text-[11px] text-rose-200/80 font-sans mt-0.5">
+                Bot dilarang membuka layer averaging baru. Masa tenggang <strong>24 jam</strong> aktif untuk menyelesaikan posisi floating secara aman.
+              </p>
+            </div>
+          </div>
+          {onOpenGas && (
+            <button
+              onClick={onOpenGas}
+              className="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-xs font-mono shrink-0 transition"
+            >
+              Top-Up Gas
+            </button>
+          )}
+        </div>
+      )}
+
+      {isGasWarning && (
+        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 fill-current" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 font-bold text-xs">
+                <span>ZONA WASPADA: Saldo Gas Fee ≤ 10 USDT ({gasReserve.toFixed(2)} USDT)</span>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-400 text-slate-950 font-extrabold uppercase">
+                  Bot Tetap Berjalan
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-200/80 font-sans mt-0.5">
+                Saldo gas menipis namun bot tetap berjalan normal. Disarankan melakukan top-up gas pool segera.
+              </p>
+            </div>
+          </div>
+          {onOpenGas && (
+            <button
+              onClick={onOpenGas}
+              className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs font-mono shrink-0 transition"
+            >
+              Top-Up Gas
+            </button>
+          )}
+        </div>
+      )}
+
       {/* View Header */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-100 via-white to-slate-100 dark:from-[#0C172A] dark:via-[#091222] dark:to-[#060B14] border border-slate-200 dark:border-[#162740] shadow-sm">
         <div className="flex items-center justify-between">

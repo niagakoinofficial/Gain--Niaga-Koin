@@ -49,7 +49,7 @@ export function AccountView({
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [confirmDisconnectApi, setConfirmDisconnectApi] = useState(false);
-  const { currentUser, loginWithGoogle, logout, isFirebaseConnected } = useAuth();
+  const { currentUser, loginWithGoogle, logout, isFirebaseConnected, isLoggingIn } = useAuth();
   const { theme, setTheme } = useTheme();
 
   const referralLink = `https://gainkoin.io/register?ref=${wallet.memberId}`;
@@ -170,9 +170,14 @@ export function AccountView({
                   <span className="text-white font-semibold block leading-tight">
                     {currentUser.displayName || 'Pengguna GAIN'}
                   </span>
-                  <span className="text-slate-400 text-[10px] block truncate max-w-[200px]">
-                    {currentUser.email}
-                  </span>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-slate-400 text-[10px] block truncate max-w-[160px]">
+                      {currentUser.email}
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-0.5">
+                      <Check className="w-2.5 h-2.5" /> Gmail Verified
+                    </span>
+                  </div>
                 </div>
               </>
             ) : (
@@ -195,10 +200,20 @@ export function AccountView({
           ) : (
             <button
               onClick={loginWithGoogle}
-              className="px-3.5 py-1.5 rounded-lg bg-[#00F0C8] text-slate-950 hover:bg-[#00D0AD] transition text-xs font-mono font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0"
+              disabled={isLoggingIn}
+              className="px-3.5 py-1.5 rounded-lg bg-[#00F0C8] hover:bg-[#00D0AD] disabled:opacity-60 text-slate-950 transition text-xs font-mono font-bold flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0"
             >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Masuk dengan Google</span>
+              {isLoggingIn ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Menghubungkan...</span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Masuk dengan Google</span>
+                </>
+              )}
             </button>
           )}
         </div>
@@ -401,11 +416,11 @@ export function AccountView({
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                     : 'bg-slate-800 text-slate-400 border-slate-700'
                 }`}>
-                  {wallet.twoFactorEnabled !== false ? 'Aktif' : 'Non-Aktif'}
+                  {wallet.twoFactorEnabled !== false ? 'Wajib Saat Login' : 'Non-Aktif'}
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                Proteksi penarikan vault dan transfer P2P • Kelola Kunci &amp; QR
+                Wajib verifikasi 6 digit sebelum login dashboard, penarikan &amp; transfer P2P
               </p>
             </div>
           </div>

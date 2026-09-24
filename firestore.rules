@@ -41,7 +41,9 @@ service cloud.firestore {
              (!('totalOutflow' in data) || (data.totalOutflow is number && data.totalOutflow >= 0)) &&
              (!('accountStatus' in data) || data.accountStatus in ['active', 'non-active']) &&
              (!('twoFactorEnabled' in data) || data.twoFactorEnabled is bool) &&
-             (!('twoFactorSecret' in data) || (data.twoFactorSecret is string && data.twoFactorSecret.size() <= 64));
+             (!('twoFactorSecret' in data) || (data.twoFactorSecret is string && data.twoFactorSecret.size() <= 64)) &&
+             (!('emailVerified' in data) || data.emailVerified is bool) &&
+             (!('emailVerificationCode' in data) || (data.emailVerificationCode is string && data.emailVerificationCode.size() <= 16));
     }
 
     function isValidTradingPosition(data) {

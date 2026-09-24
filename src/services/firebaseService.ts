@@ -59,6 +59,7 @@ export async function initUserProfile(user: { uid: string; displayName?: string 
         totalReferralBonusUsdt: newWallet.totalReferralBonusUsdt,
         twoFactorEnabled: newWallet.twoFactorEnabled ?? true,
         twoFactorSecret: newWallet.twoFactorSecret ?? 'JBSWY3DPEHPK3PXPJA2G6ZRA',
+        emailVerified: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -180,6 +181,8 @@ export function subscribeToUserWallet(
           totalReferralBonusUsdt: data.totalReferralBonusUsdt ?? initialWallet.totalReferralBonusUsdt,
           twoFactorEnabled: data.twoFactorEnabled ?? initialWallet.twoFactorEnabled ?? true,
           twoFactorSecret: data.twoFactorSecret ?? initialWallet.twoFactorSecret ?? 'JBSWY3DPEHPK3PXPJA2G6ZRA',
+          emailVerified: data.emailVerified ?? false,
+          emailVerificationCode: data.emailVerificationCode,
         });
       }
     },

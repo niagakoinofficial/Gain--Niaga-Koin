@@ -110,11 +110,16 @@ export function DepositModal({ isOpen, onClose, onViewLedger, onDepositSuccess }
         {/* Modal Header */}
         <div className="px-5 py-3 border-b border-[#14233A] flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-base text-white tracking-wide">
-              Deposit USDT (BEP-20)
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-base text-white tracking-wide">
+                Deposit USDT (BEP-20)
+              </h3>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold">
+                Exchange Custody
+              </span>
+            </div>
             <p className="text-[11px] text-slate-400 font-mono">
-              Algorithmic Settlement Vault Deposit
+              Akun Bursa Resmi GAIN • Verifikasi TxID Otomatis
             </p>
           </div>
           <button
@@ -277,6 +282,24 @@ export function DepositModal({ isOpen, onClose, onViewLedger, onDepositSuccess }
                   className="w-full px-3 py-2 rounded-xl bg-[#09111E] border border-[#162740] text-sm font-mono text-white placeholder:text-slate-600 focus:outline-none focus:border-[#00F0C8]"
                 />
                 <span className="absolute right-3 top-2.5 text-xs font-mono font-bold text-[#00F0C8]">USDT</span>
+              </div>
+
+              {/* Quick Preset Buttons (50 USDT Default) */}
+              <div className="flex items-center gap-1.5 mt-2">
+                {['50', '100', '250', '500'].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setDepositAmount(preset)}
+                    className={`flex-1 py-1 rounded-lg text-[11px] font-mono font-semibold transition cursor-pointer border ${
+                      depositAmount === preset
+                        ? 'bg-[#00F0C8]/20 border-[#00F0C8] text-[#00F0C8]'
+                        : 'bg-[#0B1527] border-[#162740] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {preset} USDT
+                  </button>
+                ))}
               </div>
             </div>
 

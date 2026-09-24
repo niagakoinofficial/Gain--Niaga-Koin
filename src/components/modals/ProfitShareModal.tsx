@@ -66,40 +66,64 @@ export function ProfitShareModal({ isOpen, onClose, onOpenGasModal }: ProfitShar
             </div>
           </div>
 
-          {/* 3-Card Distribution Breakdown */}
+          {/* 2-Card Exact 70/30 Distribution Breakdown */}
           <div>
             <label className="block text-[11px] font-mono text-slate-400 mb-2 uppercase tracking-wider">
-              Rincian Alokasi Pemotongan 20% Gas Fee
+              Rincian Alokasi Pemotongan 20% Gas Fee (Non-MLM)
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <div className="p-3 rounded-xl bg-[#09111E] border border-[#162740]">
-                <div className="flex items-center gap-1.5 text-blue-400 mb-1">
-                  <Server className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-bold">Infra & Server</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-xl bg-[#09111E] border border-blue-500/30">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5 text-blue-400">
+                    <Server className="w-4 h-4" />
+                    <span className="text-xs font-bold">GAIN Foundation & Server</span>
+                  </div>
+                  <span className="text-xs font-bold font-mono text-blue-400">70%</span>
                 </div>
-                <div className="text-lg font-bold font-mono text-white">40%</div>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">8.00 USDT</p>
-                <p className="text-[9px] text-slate-500 mt-1">High-frequency algorithmic node & cloud</p>
+                <div className="text-xl font-bold font-mono text-white">14.00 USDT</div>
+                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Operasional Server Node & Engine 24/7</p>
+                <p className="text-[9px] text-slate-500 mt-1">Dikelola langsung oleh GAIN Foundation</p>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#09111E] border border-[#162740]">
-                <div className="flex items-center gap-1.5 text-purple-400 mb-1">
-                  <Users className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-bold">Affiliate & VIP</span>
+              <div className="p-3.5 rounded-xl bg-[#09111E] border border-emerald-500/30">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5 text-emerald-400">
+                    <Users className="w-4 h-4" />
+                    <span className="text-xs font-bold">Sponsor Langsung (Direct Upline)</span>
+                  </div>
+                  <span className="text-xs font-bold font-mono text-emerald-400">30%</span>
                 </div>
-                <div className="text-lg font-bold font-mono text-white">50%</div>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">10.00 USDT</p>
-                <p className="text-[9px] text-slate-500 mt-1">Distributed to sponsor matrix tree</p>
+                <div className="text-xl font-bold font-mono text-white">6.00 USDT</div>
+                <p className="text-[10px] text-slate-400 font-mono mt-0.5">Dibagikan Instan ke Wallet Upline</p>
+                <p className="text-[9px] text-slate-500 mt-1">1 Tingkat Non-MLM (Bebas Biaya)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Circuit Breaker & Safety Threshold Box */}
+          <div className="p-3.5 rounded-xl bg-[#0B1527] border border-[#162740] space-y-2">
+            <span className="text-[10px] text-slate-400 uppercase font-mono tracking-wider block">
+              Aturan Ambang Batas Gas Fee Tank (Circuit Breaker)
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+              <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25">
+                <div className="flex items-center justify-between text-amber-400 font-bold mb-1">
+                  <span>Zona Waspada (Warning)</span>
+                  <span>≤ 10 USDT</span>
+                </div>
+                <p className="text-[10px] text-slate-300 font-sans leading-tight">
+                  Muncul alert banner untuk top up. <strong>Bot TETAP berjalan normal</strong> tanpa ada pembatasan.
+                </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#09111E] border border-[#162740]">
-                <div className="flex items-center gap-1.5 text-cyan-400 mb-1">
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-bold">Buffer Reserve</span>
+              <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/25">
+                <div className="flex items-center justify-between text-rose-400 font-bold mb-1">
+                  <span>Zona Kritis (Auto-Standby)</span>
+                  <span>≤ 5 USDT</span>
                 </div>
-                <div className="text-lg font-bold font-mono text-white">10%</div>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">2.00 USDT</p>
-                <p className="text-[9px] text-slate-500 mt-1">Black swan insurance liquidity pool</p>
+                <p className="text-[10px] text-slate-300 font-sans leading-tight">
+                  Dilarang membuka layer averaging baru. <strong>Masa tenggang (Grace Period) 24 jam</strong> untuk menyelesaikan posisi floating secara aman.
+                </p>
               </div>
             </div>
           </div>
@@ -107,19 +131,19 @@ export function ProfitShareModal({ isOpen, onClose, onOpenGasModal }: ProfitShar
           {/* Gas Tank Impact Simulation */}
           <div className="p-3.5 rounded-xl bg-[#070D17] border border-[#14233A] space-y-2 text-xs font-mono">
             <span className="text-slate-400 text-[10px] uppercase tracking-wider">
-              Simulasi Dampak Saldo Gas Fee Tank
+              Simulasi Dampak Saldo Gas Fee Tank (Profit $100)
             </span>
             <div className="flex justify-between text-slate-300">
               <span>Saldo Gas Sebelum:</span>
-              <span>28.029313 USDT</span>
+              <span>28.00 USDT</span>
             </div>
             <div className="flex justify-between text-amber-400">
-              <span>Pemotongan Gas Fee (20% Profit):</span>
-              <span>-20.000000 USDT</span>
+              <span>Potongan Gas Fee 20%:</span>
+              <span>-20.00 USDT (70% Kas: 14.00 | 30% Sponsor: 6.00)</span>
             </div>
-            <div className="border-t border-[#132034] pt-2 flex justify-between font-bold text-[#00F0C8]">
+            <div className="border-t border-[#132034] pt-2 flex justify-between font-bold text-amber-400">
               <span>Saldo Gas Sesudah:</span>
-              <span>+8.029313 USDT</span>
+              <span>+8.00 USDT (Masuk Zona Waspada ≤ 10 USDT)</span>
             </div>
           </div>
 
